@@ -15,30 +15,23 @@ from torch.utils.data import DataLoader
 import pywt
 from tsmoothie.smoother import *
 
-### USE KALMAN FILTER TO SMOOTH ALL DATA (ONLY VISUALIZATION PURPOSE) ###
-
-smoother = KalmanSmoother(component='level_longseason',
-                          component_noise={'level':0.1, 'longseason':0.1},
-                          n_longseasons=365)
-
 csvdata = read_csv('London_hh_residential.csv', engine='python').values
 original_data = read_csv('London_hh_residential.csv', engine='python').values
 
+
+## FOR DATA CLEARANCE ##
 def wavelet_denoising(data, coe=0.0):
     #np.random_seed(6)
-    # 小波函数取db4
     db4 = pywt.Wavelet('db4')
     # 分解
     coeffs = pywt.wavedec(data, db4)
-    # 高频系数置零
     coeffs[len(coeffs) - 1] *= coe
-    #coeffs[len(coeffs) - 2] *= 0
-    # 重构
     meta = pywt.waverec(coeffs, db4)
     #print(data)
     #print(meta)
     return meta
 
+## FOR STABILITY ANALYSIS ##
 def add_gaussian_noise(tensor, mean=0, std=2.5):
     #print(tensor.shape)
     noise_p = abs(np.mean(tensor[:,0]))*2.5/100
@@ -50,6 +43,8 @@ def add_gaussian_noise(tensor, mean=0, std=2.5):
     noisy_tensor = tensor.copy() + noise
     return noisy_tensor
 
+
+## CREATE PYTORCH DATALOADER FORMAT ##
 class London_sm_data(Dataset):
     def __init__(self, dataset_type='train', start_date='2013-09-01', train_split='2013-12-01', client=1,\
                  forecast_period=1, window_width=10, valid_split=0.1):
